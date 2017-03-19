@@ -1,0 +1,7 @@
+Cecil Hutchings:
+For CSCI Programming Assignment 3
+There are two or three reasons I actually want to mention.
+
+If you comparmentalize your application, only one segment of your api code can be called by an attacker. So that means that they have to find the segment that grants api keys, which doesn't exactly have to be an easily identified uri like '/oauth' and could very well live on a seperate urn from your normal code.
+
+Also, this may be particular to apigee, but the way this assignment is set up I have no code for oauth in my mainflow. When my assignment had to be redeployed, I didn't have to go in and muck about with the oauth implimentation, or if my password validation code was correct. I could just fix what needed to be fixed and go about my business, and if I accidentally deleted a comma it didn't break my entire toolchain. I can also extend these Oauth policies to any other application.
