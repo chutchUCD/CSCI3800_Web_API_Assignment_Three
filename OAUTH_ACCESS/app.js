@@ -71,28 +71,25 @@ function githubFunction(credentials, query, res){
             res.code = err.code
             res.send(e.status)
         }else{
-            res.status=200
-            res.send(resp['data'])
+            res.status(200).send(resp['data'])
         }
     });
 }
 
 app.get('/', function (req, res) {
-    
     if (req.query) {
         getCredentials( function(cred){
             q = req.query
             if (q['user']){
                 githubFunction(cred, q, res)
             }else{
-                res.status=400
-                res.send("Bad query. Use ?user=target_user")
+                
+                res.status(400).send("Bad query. Use ?user=target_user")
             }
         });
     } else{
         if (!req.query){
-            res.status=400
-            res.send("Malformed request. No Query.")
+            res.status(400).send("Bad query. Use ?user=target_user")
         }
     }
         

@@ -1,0 +1,177 @@
+{
+	"variables": [],
+	"info": {
+		"name": "Github Oauth Tests",
+		"_postman_id": "8814cc0c-9ac5-e933-59bf-78838c1ca902",
+		"description": "Tests against two oauth proxies that secure a route to github users.\n",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "https://chutch-test.apigee.net/github_pa3",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"//var rj;//response JSON.",
+							"tests[\"Tests Valid?\"] = true;//see catch statement",
+							"try {",
+							"    //EVERYTHING IS NOT FINE!",
+							"    tests[\"Status code is 401\"] = responseCode.code === 401 ;",
+							"    tests[\"Respose body has an oauth.v2 reference\"] = responseBody.has(\"oauth.v2\");    ",
+							"}",
+							"catch (e){",
+							"    //This at least says that the test is invalid. If there is any error",
+							"    tests[\"Tests Valid?\"] = false;",
+							"    postman.setEnvironmentVariable(\"error\", e);//and this is essentially 'console.log(e)'",
+							"}",
+							"",
+							"",
+							"",
+							""
+						]
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"postman.setEnvironmentVariable(\"error\", \"none\");",
+							"  ",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://chutch-test.apigee.net/github_pa3",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": "This is a test against against a secured oauth uri without adding the authorization header. Expect it to fail."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Access Token for client",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"",
+							"tests[\"Has an access token\"] =jsonData[\"access_token\"]//if this is undefined the test will fail.",
+							"",
+							"if (jsonData[\"access_token\"]){",
+							"    postman.setEnvironmentVariable(\"oauth_key\",jsonData[\"access_token\"]);",
+							"}",
+							"",
+							"tests[\"Has a timeout\"] = jsonData[\"expires_in\"]",
+							"if (jsonData[\"expires_in\"]){",
+							"    d = new Date(jsonData[\"expires_in\"])",
+							"    postman.setEnvironmentVariable(\"timeout\", d.getTime())//store the future expiration date as a millisecond time value",
+							"}",
+							"",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://chutch-test.apigee.net/oauth/client_credential/accesstoken?grant_type=client_credentials",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "client_id",
+							"value": "J1Wk4YgxN2BzfGAbYcPUT8PySZLNrnwH",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "client_secret",
+							"value": "c6ZInXyGhyeiGoOY",
+							"type": "text",
+							"enabled": true
+						}
+					]
+				},
+				"description": "Demonstrates how to get an access token from apigee's postman oauth api. This test uses a developer credential id and secret key specified in the environment.\n\nCalling this test sets the Oauth environment variable and sets the 'timeout' variable in the environment to the current time plus the keys expiration date."
+			},
+			"response": []
+		},
+		{
+			"name": "Test with Oauth",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"tests[\"Contains Github In response\"] = responseBody.has(\"api.github.com\");",
+							"tests[\"Contains followers_url, although maybe not follwers\"] = responseBody.has(\"followers_url\")"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://chutch-test.apigee.net/github_pa3/?user=chutchucd",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer iTGGuCpl8M18Fe9qDY0hYerdu8YX",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Runs an Oauth test against a known (hard coded) credential. This uses the requested Oauth key and gets the first five users following someones github.\n\nAuthorization is provided as a header through the oauth request 'Token Name', it provides you with a big convenient button you can use to update the test."
+			},
+			"response": []
+		},
+		{
+			"name": "Test with Oauth copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 400\"] = responseCode.code === 400;",
+							"tests[\"No Github In response\"] = !responseBody.has(\"api.github.com\");",
+							"tests[\"Bad Query warning\"] = responseBody.has(\"Bad query\")"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://chutch-test.apigee.net/github_pa3/",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer iTGGuCpl8M18Fe9qDY0hYerdu8YX",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Runs an Oauth test against a known (hard coded) credential. This uses the requested Oauth key and gets the first five users following someones github.\n\nAuthorization is provided as a header through the oauth request 'Token Name', it provides you with a big convenient button you can use to update the test."
+			},
+			"response": []
+		}
+	]
+}
