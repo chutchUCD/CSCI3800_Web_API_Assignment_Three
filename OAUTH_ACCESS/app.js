@@ -1,52 +1,23 @@
-var express = require('express')
-var avault = require('avault') 
-var gitapi = require("github")
+var express = require('express');
+var avault = require('avault');
+var gitapi = require('github');
+//Requirements
 
-
-var app = express()
-
-app.get('/', function (req, res){
-    console.log(req.headers )
-    if (req.query) {
-        getCredentials(func=function( cred, rq=req, rs=res){
-            q = rq.query
-            if (q['user']){
-                console.log(q)
-                githubFunction(cred, query=q, rs)
-            }else{
-                res.status=400
-                res.send("Bad query. Use ?user=target_user")
-            }
-        });
-    } else{
-        /*
-        if (req.status !== 200){
-            console.log("here")
-            res.headers = req.headers
-            res.send()
-        }*/
-        if (!req.query){
-            res.status=400
-            res.send("Malformed request. No Query.")
-        }
-    }
-        
-
-});
-        
+var app = express();
+//Baseapp
         
 /*
 getCredentials:
     Takes as a value a function and an error function.
     Calls the function on a single stored credential.
 */
-function getCredentials(func=undefined, err=undefined){
+function getCredentials(func, err){
     var v=avault.createVault(__dirname + "/node_modules/avault")
-    v.get('amberjack', function(cred_str, f=func, e=err){
+    v.get('amberjack', function(cred_str){
         if(!cred_str){
             console.log("Vault not found.")
-            if (e){
-                return e()                
+            if (err){
+                return err()                
             } else{
                 console.log("No vault and nod error function.")
             }
@@ -59,12 +30,13 @@ function getCredentials(func=undefined, err=undefined){
             I used " '' " instead of '""' and JSON doesn't like that.
             */
             var cred = JSON.parse(cred_str)//get credentials
-            if (f){
-                return f(cred)
+            if (func){
+                return func(cred)
             }
         }
     })
 }
+
 
 function githubFunction(credentials, query, res){
     
@@ -80,23 +52,55 @@ function githubFunction(credentials, query, res){
         token:credentials["ukey"]
     })
     
-    console.log(query)
     /*Get the first five followers of the user on one page*/
-    github.users.getFollowersForUser({username:query['user'], page:1, per_page:5}).then( function(resp, rs=res){
-            rs.status=200
-            rs.send(resp['data'])
-        })
-        .catch(function(e, rs=res){
-        console.log(e)
-        /*I coded this because my apartment had an unexpected
-        blackout and I had no power/wifi for 10 minutes, giving me
-        time to code a reasonable solution to unexpectedly losing
-        power*/
-        
-        rs.code = e.code
-        rs.send(e.status)
-    })
+    /*When apigee supports promises this code will work...*/
+//    github.users.getFollowersForUser({username:query['user'], page:1, per_page:5}).then(function(resp){
+//            res.status=200
+//            res.send(resp['data'])
+//        }).catch(function(e){
+//        console.log(e)
+//        /*I coded this because my apartment had an unexpected
+//        blackout and I had no power/wifi for 10 minutes, giving me
+//        time to code a reasonable solution to unexpectedly losing
+//        power*/
+//        res.code = e.code
+//        res.send(e.status)
+//    })
+    github.users.getFollowersForUser({username:query['user'],page:1,per_page:5}, function(err, resp){
+        if(err){
+            res.code = err.code
+            res.send(e.status)
+        }else{
+            res.status=200
+            res.send(resp['data'])
+        }
+    });
 }
+
+app.get('/', function (req, res) {
+    
+    if (req.query) {
+        getCredentials( function(cred){
+            q = req.query
+            if (q['user']){
+                githubFunction(cred, q, res)
+            }else{
+                res.status=400
+                res.send("Bad query. Use ?user=target_user")
+            }
+        });
+    } else{
+        if (!req.query){
+            res.status=400
+            res.send("Malformed request. No Query.")
+        }
+    }
+        
+
+});
+        
+
+
 
 /*
 //Make sure the vault is working
